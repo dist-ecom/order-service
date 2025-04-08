@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum OrderStatus {
@@ -11,56 +11,47 @@ export enum OrderStatus {
 
 export enum PaymentStatus {
   PENDING = 'pending',
-  PROCESSING = 'processing',
+  PAID = 'paid',
   COMPLETED = 'completed',
   FAILED = 'failed',
   REFUNDED = 'refunded',
 }
 
-@Entity('order_items')
 export class OrderItem {
   @ApiProperty({
     description: 'The unique identifier of the order item',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @ApiProperty({
     description: 'The ID of the product',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @Column()
   productId: string;
 
   @ApiProperty({
-    description: 'The quantity of the product ordered',
+    description: 'The quantity of the product',
     example: 2,
-    minimum: 1,
   })
-  @Column()
   quantity: number;
 
   @ApiProperty({
     description: 'The price of the product at the time of order',
     example: 29.99,
-    minimum: 0,
   })
-  @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
   @ApiProperty({
     description: 'The name of the product at the time of order',
     example: 'Premium Wireless Headphones',
   })
-  @Column()
   name: string;
 
   @ApiProperty({
     description: 'The ID of the order this item belongs to',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @Column()
   orderId: string;
 }
 
@@ -92,7 +83,7 @@ export class Order {
       orderId: '123e4567-e89b-12d3-a456-426614174000',
     }],
   })
-  @Column('jsonb', { nullable: true })
+  @Column('jsonb')
   items: OrderItem[];
 
   @ApiProperty({
@@ -119,8 +110,16 @@ export class Order {
     description: 'The shipping address for the order',
     example: '123 Main St, Apt 4B, New York, NY 10001',
   })
-  @Column()
+  @Column({ nullable: true })
   shippingAddress: string;
+
+  @ApiProperty({
+    description: 'The tracking number for the order',
+    example: '1Z999AA10123456784',
+    required: false,
+  })
+  @Column({ nullable: true })
+  trackingNumber: string;
 
   @ApiProperty({
     description: 'The payment method for the order',

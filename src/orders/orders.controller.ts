@@ -2,11 +2,12 @@ import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards, Request }
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { Order, OrderStatus } from './entities/order.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -50,14 +51,23 @@ export class OrdersController {
   @Patch(':id/status')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  @ApiOperation({ summary: 'Update order status' })
-  @ApiResponse({ status: 200, description: 'The order status has been updated.', type: Order })
+  @ApiOperation({ 
+    summary: 'Update order status',
+    description: 'Update the status of an order. When status is changed to SHIPPED, the product stock will be decreased accordingly.'
+  })
+  @ApiBody({ type: UpdateOrderStatusDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'The order status has been updated. If status is SHIPPED, product stock has been decreased.', 
+    type: Order 
+  })
   @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. User does not have admin role.' })
   async updateStatus(
     @Param('id') id: string,
-    @Body('status') status: OrderStatus,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
   ): Promise<Order> {
-    return this.ordersService.updateStatus(id, status);
+    return this.ordersService.updateStatus(id, updateOrderStatusDto.status);
   }
 
   @Patch(':id/payment-status')

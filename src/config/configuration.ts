@@ -14,5 +14,6 @@ export default () => ({
   services: {
     product: process.env.PRODUCT_SERVICE_URL,
     user: process.env.USER_SERVICE_URL,
+    adminToken: process.env.ADMIN_TOKEN,
   },
 }); 

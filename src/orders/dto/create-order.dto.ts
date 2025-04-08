@@ -11,19 +11,17 @@ export enum PaymentMethod {
 
 export class OrderItemDto {
   @ApiProperty({
-    description: 'The ID of the product to order',
+    description: 'The ID of the product',
     example: '123e4567-e89b-12d3-a456-426614174000',
-    format: 'uuid',
   })
   @IsString()
   @IsNotEmpty()
   productId: string;
 
   @ApiProperty({
-    description: 'The quantity of the product to order',
+    description: 'The quantity of the product',
     example: 2,
     minimum: 1,
-    type: 'integer',
   })
   @IsNumber()
   @Min(1)
@@ -32,18 +30,8 @@ export class OrderItemDto {
 
 export class CreateOrderDto {
   @ApiProperty({
-    description: 'The items to be ordered',
+    description: 'The items in the order',
     type: [OrderItemDto],
-    example: [
-      {
-        productId: '123e4567-e89b-12d3-a456-426614174000',
-        quantity: 2,
-      },
-      {
-        productId: '987fcdeb-a987-54d3-b321-987654321000',
-        quantity: 1,
-      },
-    ],
   })
   @IsArray()
   @ValidateNested({ each: true })
@@ -53,7 +41,6 @@ export class CreateOrderDto {
   @ApiProperty({
     description: 'The shipping address for the order',
     example: '123 Main St, Apt 4B, New York, NY 10001',
-    minLength: 10,
   })
   @IsString()
   @IsNotEmpty()
