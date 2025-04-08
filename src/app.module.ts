@@ -7,6 +7,7 @@ import { OrdersModule } from './orders/orders.module';
 import configuration from './config/configuration';
 import { Order } from './orders/entities/order.entity';
 import { CreateOrdersTable1710000000000 } from './migrations/1710000000000-CreateOrdersTable';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CreateOrdersTable1710000000000 } from './migrations/1710000000000-Creat
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
     OrdersModule,
   ],
   controllers: [AppController],
