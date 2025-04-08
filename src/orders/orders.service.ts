@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { Order, OrderStatus, OrderItem } from './entities/order.entity';
+import { Order, OrderStatus, OrderItem, PaymentStatus } from './entities/order.entity';
+import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductService } from './services/product.service';
 
@@ -49,6 +50,8 @@ export class OrdersService {
       status: OrderStatus.PENDING,
       shippingAddress: createOrderDto.shippingAddress,
       paymentMethod: createOrderDto.paymentMethod,
+      paymentStatus: PaymentStatus.PENDING,
+      paymentIntentId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -76,6 +79,33 @@ export class OrdersService {
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
     const order = await this.findOne(id);
     order.status = status;
+    order.updatedAt = new Date();
+    return order;
+  }
+
+  async updatePaymentStatus(id: string, updatePaymentStatusDto: UpdatePaymentStatusDto): Promise<Order> {
+    const order = await this.findOne(id);
+    
+    // Update payment status
+    order.paymentStatus = updatePaymentStatusDto.paymentStatus;
+    
+    // Update payment intent ID if provided
+    if (updatePaymentStatusDto.paymentIntentId) {
+      order.paymentIntentId = updatePaymentStatusDto.paymentIntentId;
+    }
+    
+    // If payment is completed, update order status to processing
+    if (updatePaymentStatusDto.paymentStatus === PaymentStatus.COMPLETED && 
+        order.status === OrderStatus.PENDING) {
+      order.status = OrderStatus.PROCESSING;
+    }
+    
+    // If payment failed, update order status to cancelled
+    if (updatePaymentStatusDto.paymentStatus === PaymentStatus.FAILED && 
+        order.status === OrderStatus.PENDING) {
+      order.status = OrderStatus.CANCELLED;
+    }
+    
     order.updatedAt = new Date();
     return order;
   }

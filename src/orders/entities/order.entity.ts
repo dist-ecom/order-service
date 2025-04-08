@@ -9,6 +9,14 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+}
+
 @Entity('order_items')
 export class OrderItem {
   @ApiProperty({
@@ -115,12 +123,32 @@ export class Order {
   shippingAddress: string;
 
   @ApiProperty({
-    description: 'The payment method used for the order',
+    description: 'The payment method for the order',
     example: 'credit_card',
     enum: ['credit_card', 'debit_card', 'paypal', 'bank_transfer'],
   })
   @Column()
   paymentMethod: string;
+
+  @ApiProperty({
+    description: 'The status of the payment',
+    enum: PaymentStatus,
+    example: PaymentStatus.PENDING,
+  })
+  @Column({
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
+  paymentStatus: PaymentStatus;
+
+  @ApiProperty({
+    description: 'The Stripe payment intent ID',
+    example: 'pi_3NkXYZABCDEFGHIJKLMNOPQR',
+    required: false,
+  })
+  @Column({ nullable: true })
+  paymentIntentId: string;
 
   @ApiProperty({
     description: 'The date and time when the order was created',

@@ -9,6 +9,13 @@ export class CreateOrdersTable1710000000000 implements MigrationInterface {
       )
     `);
 
+    // Create enum type for payment status
+    await queryRunner.query(`
+      CREATE TYPE payment_status_enum AS ENUM (
+        'pending', 'processing', 'completed', 'failed', 'refunded'
+      )
+    `);
+
     // Create orders table
     await queryRunner.createTable(
       new Table({
@@ -49,6 +56,17 @@ export class CreateOrdersTable1710000000000 implements MigrationInterface {
           {
             name: 'payment_method',
             type: 'varchar',
+          },
+          {
+            name: 'payment_status',
+            type: 'enum',
+            enum: ['pending', 'processing', 'completed', 'failed', 'refunded'],
+            default: "'pending'",
+          },
+          {
+            name: 'payment_intent_id',
+            type: 'varchar',
+            isNullable: true,
           },
           {
             name: 'created_at',
@@ -125,7 +143,8 @@ export class CreateOrdersTable1710000000000 implements MigrationInterface {
     await queryRunner.dropTable('order_items');
     await queryRunner.dropTable('orders');
 
-    // Drop enum type
+    // Drop enum types
     await queryRunner.query(`DROP TYPE order_status_enum`);
+    await queryRunner.query(`DROP TYPE payment_status_enum`);
   }
 } 

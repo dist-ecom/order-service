@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards, Request } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { Order, OrderStatus } from './entities/order.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -57,6 +58,19 @@ export class OrdersController {
     @Body('status') status: OrderStatus,
   ): Promise<Order> {
     return this.ordersService.updateStatus(id, status);
+  }
+
+  @Patch(':id/payment-status')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update order payment status' })
+  @ApiResponse({ status: 200, description: 'The order payment status has been updated.', type: Order })
+  @ApiResponse({ status: 404, description: 'Order not found.' })
+  async updatePaymentStatus(
+    @Param('id') id: string,
+    @Body() updatePaymentStatusDto: UpdatePaymentStatusDto,
+  ): Promise<Order> {
+    return this.ordersService.updatePaymentStatus(id, updatePaymentStatusDto);
   }
 
   @Delete(':id')
