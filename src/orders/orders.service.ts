@@ -1,19 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order, OrderStatus, OrderItem, PaymentStatus } from './entities/order.entity';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductService } from './services/product.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
-    @InjectRepository(Order)
-    private readonly orderRepository: Repository<Order>,
+    private readonly prisma: PrismaService,
     private readonly productService: ProductService,
   ) {}
 
@@ -48,37 +46,44 @@ export class OrdersService {
       item.orderId = orderId;
     });
 
-    const order = this.orderRepository.create({
-      id: orderId,
-      userId,
-      items: orderItems,
-      totalAmount,
-      status: OrderStatus.PENDING,
-      shippingAddress: createOrderDto.shippingAddress,
-      paymentMethod: createOrderDto.paymentMethod,
-      paymentStatus: PaymentStatus.PENDING,
-      paymentIntentId: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const order = await this.prisma.order.create({
+      data: {
+        id: orderId,
+        userId,
+        items: orderItems as any, // Store as JSON
+        totalAmount,
+        status: OrderStatus.PENDING,
+        shippingAddress: createOrderDto.shippingAddress,
+        paymentMethod: createOrderDto.paymentMethod,
+        paymentStatus: PaymentStatus.PENDING,
+      },
     });
 
-    return this.orderRepository.save(order);
+    return order as unknown as Order;
   }
 
   async findAll(): Promise<Order[]> {
-    return this.orderRepository.find();
+    const orders = await this.prisma.order.findMany();
+    return orders as unknown as Order[];
   }
 
   async findByUser(userId: string): Promise<Order[]> {
-    return this.orderRepository.find({ where: { userId } });
+    const orders = await this.prisma.order.findMany({
+      where: { userId },
+    });
+    return orders as unknown as Order[];
   }
 
   async findOne(id: string): Promise<Order> {
-    const order = await this.orderRepository.findOne({ where: { id } });
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+    });
+    
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
-    return order;
+    
+    return order as unknown as Order;
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
@@ -88,7 +93,7 @@ export class OrdersService {
     if (status === OrderStatus.SHIPPED && order.status !== OrderStatus.SHIPPED) {
       try {
         await Promise.all(
-          order.items.map(item => 
+          (order.items as unknown as OrderItem[]).map(item => 
             this.productService.decreaseStock(item.productId, item.quantity)
           )
         );
@@ -99,45 +104,63 @@ export class OrdersService {
       }
     }
     
-    order.status = status;
-    order.updatedAt = new Date();
-    return this.orderRepository.save(order);
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status,
+        updatedAt: new Date(),
+      },
+    });
+    
+    return updatedOrder as unknown as Order;
   }
 
   async updatePaymentStatus(id: string, updatePaymentStatusDto: UpdatePaymentStatusDto): Promise<Order> {
     const order = await this.findOne(id);
     
-    // Update payment status
-    order.paymentStatus = updatePaymentStatusDto.paymentStatus;
-    
-    // Update payment intent ID if provided
-    if (updatePaymentStatusDto.paymentIntentId) {
-      order.paymentIntentId = updatePaymentStatusDto.paymentIntentId;
-    }
+    // Determine if order status should be updated based on payment status
+    let orderStatus = undefined;
     
     // If payment is completed, update order status to processing
     if (updatePaymentStatusDto.paymentStatus === PaymentStatus.COMPLETED && 
         order.status === OrderStatus.PENDING) {
-      order.status = OrderStatus.PROCESSING;
+      orderStatus = OrderStatus.PROCESSING;
     }
     
     // If payment failed, update order status to cancelled
     if (updatePaymentStatusDto.paymentStatus === PaymentStatus.FAILED && 
         order.status === OrderStatus.PENDING) {
-      order.status = OrderStatus.CANCELLED;
+      orderStatus = OrderStatus.CANCELLED;
     }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        paymentStatus: updatePaymentStatusDto.paymentStatus,
+        paymentIntentId: updatePaymentStatusDto.paymentIntentId || undefined,
+        status: orderStatus,
+        updatedAt: new Date(),
+      },
+    });
     
-    order.updatedAt = new Date();
-    return this.orderRepository.save(order);
+    return updatedOrder as unknown as Order;
   }
 
   async cancel(id: string): Promise<Order> {
     const order = await this.findOne(id);
+    
     if (order.status !== OrderStatus.PENDING) {
       throw new BadRequestException('Only pending orders can be cancelled');
     }
-    order.status = OrderStatus.CANCELLED;
-    order.updatedAt = new Date();
-    return this.orderRepository.save(order);
+    
+    const cancelledOrder = await this.prisma.order.update({
+      where: { id },
+      data: {
+        status: OrderStatus.CANCELLED,
+        updatedAt: new Date(),
+      },
+    });
+    
+    return cancelledOrder as unknown as Order;
   }
 } 

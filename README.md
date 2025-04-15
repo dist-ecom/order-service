@@ -8,7 +8,7 @@ This is the Order Service for the e-commerce platform. It handles order creation
 - Track order status
 - Integrate with Product Service for product validation
 - Swagger API documentation
-- PostgreSQL database with migrations
+- PostgreSQL database with Prisma ORM
 - JWT authentication
 
 ## Prerequisites
@@ -30,14 +30,30 @@ cd order-service
 npm install
 ```
 
-3. Create a PostgreSQL database:
-```sql
-CREATE DATABASE order_service_db;
+3. Set up environment variables:
+- Copy `.env.example` to `.env` (if it exists) or create a new `.env` file
+- Update database credentials and other configurations
+
+4. Generate Prisma client:
+```bash
+npx prisma generate
 ```
 
-4. Configure environment variables:
-   - Copy the `.env.example` file to `.env`
-   - Update the database connection details and other configuration as needed
+5. Run database migrations:
+```bash
+npx prisma migrate dev
+```
+
+## Database Setup
+
+This service uses Prisma ORM to manage database access. The database schema is defined in `prisma/schema.prisma`.
+
+### Prisma Commands
+
+- Generate Prisma client: `npx prisma generate`
+- Create a migration: `npx prisma migrate dev --name <migration-name>`
+- Apply migrations: `npx prisma migrate deploy`
+- View database in Prisma Studio: `npx prisma studio`
 
 ## Running the Application
 
