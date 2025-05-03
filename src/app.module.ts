@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ServiceDiscoveryModule } from './service-discovery/service-discovery.module';
 import { HealthModule } from './health/health.module';
+import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { HealthModule } from './health/health.module';
     PrismaModule,
     AuthModule,
     ServiceDiscoveryModule,
+    RabbitmqModule,
     OrdersModule,
     HealthModule,
   ],

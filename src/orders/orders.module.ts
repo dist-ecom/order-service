@@ -5,12 +5,14 @@ import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { ProductService } from './services/product.service';
 import { ServiceDiscoveryModule } from '../service-discovery/service-discovery.module';
+import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
     HttpModule,
     ConfigModule,
     ServiceDiscoveryModule,
+    RabbitmqModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, ProductService],

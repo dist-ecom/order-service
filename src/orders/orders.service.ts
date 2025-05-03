@@ -5,6 +5,7 @@ import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductService } from './services/product.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 
 @Injectable()
 export class OrdersService {
@@ -13,6 +14,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly productService: ProductService,
+    private readonly rabbitmqService: RabbitmqService,
   ) {}
 
   async create(createOrderDto: CreateOrderDto, userId: string): Promise<Order> {
@@ -58,6 +60,9 @@ export class OrdersService {
         paymentStatus: PaymentStatus.PENDING,
       },
     });
+
+    // Publish order created event
+    await this.rabbitmqService.publishOrderCreated(order);
 
     return order as unknown as Order;
   }
@@ -112,6 +117,9 @@ export class OrdersService {
       },
     });
     
+    // Publish order updated event
+    await this.rabbitmqService.publishOrderUpdated(updatedOrder);
+    
     return updatedOrder as unknown as Order;
   }
 
@@ -143,6 +151,9 @@ export class OrdersService {
       },
     });
     
+    // Publish order updated event
+    await this.rabbitmqService.publishOrderUpdated(updatedOrder);
+    
     return updatedOrder as unknown as Order;
   }
 
@@ -160,6 +171,9 @@ export class OrdersService {
         updatedAt: new Date(),
       },
     });
+    
+    // Publish order cancelled event
+    await this.rabbitmqService.publishOrderCancelled(cancelledOrder);
     
     return cancelledOrder as unknown as Order;
   }
