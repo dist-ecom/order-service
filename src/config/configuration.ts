@@ -9,11 +9,13 @@ export default () => ({
   },
   jwt: {
     secret: process.env.JWT_SECRET,
+    orderServiceKey: process.env.JWT_ORDER_SERVICE_KEY,
     expiresIn: process.env.JWT_EXPIRATION || '1d',
   },
   services: {
     product: process.env.PRODUCT_SERVICE_URL,
     user: process.env.USER_SERVICE_URL,
     adminToken: process.env.ADMIN_TOKEN,
+    registry: process.env.SERVICE_REGISTRY_URL,
   },
 }); 

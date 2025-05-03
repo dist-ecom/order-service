@@ -4,11 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
 import { ProductService } from './services/product.service';
+import { ServiceDiscoveryModule } from '../service-discovery/service-discovery.module';
 
 @Module({
   imports: [
     HttpModule,
-    ConfigModule
+    ConfigModule,
+    ServiceDiscoveryModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, ProductService],

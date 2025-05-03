@@ -1,8 +1,9 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { UpdateStockDto } from '../dto/update-stock.dto';
+import { ServiceDiscoveryService } from '../../service-discovery/service-discovery.service';
 
 interface ProductResponse {
   _id: string;
@@ -21,21 +22,36 @@ interface ProductResponse {
 
 @Injectable()
 export class ProductService {
-  private readonly productServiceUrl: string;
+  private readonly logger = new Logger(ProductService.name);
+  private productServiceUrl: string;
   private readonly adminToken: string;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly serviceDiscovery: ServiceDiscoveryService,
   ) {
-    this.productServiceUrl = this.configService.get<string>('services.product');
     this.adminToken = this.configService.get<string>('services.adminToken');
+    // Initialize with fallback URL, will be updated dynamically
+    this.productServiceUrl = this.configService.get<string>('services.product');
+  }
+
+  private async getProductServiceUrl(): Promise<string> {
+    try {
+      // Get the URL from service discovery
+      return await this.serviceDiscovery.getServiceUrl('product-service');
+    } catch (error) {
+      this.logger.warn(`Failed to get product service URL from discovery, using fallback: ${error.message}`);
+      return this.productServiceUrl;
+    }
   }
 
   async validateProduct(productId: string): Promise<{ price: number; name: string }> {
     try {
+      const serviceUrl = await this.getProductServiceUrl();
+      
       const response = await firstValueFrom(
-        this.httpService.get<ProductResponse>(`${this.productServiceUrl}/products/${productId}`),
+        this.httpService.get<ProductResponse>(`${serviceUrl}/products/${productId}`),
       );
       
       if (!response.data || !response.data.isActive) {
@@ -73,9 +89,11 @@ export class ProductService {
 
   async decreaseStock(productId: string, quantity: number): Promise<void> {
     try {
+      const serviceUrl = await this.getProductServiceUrl();
+      
       // First check if product exists and has enough stock
       const product = await firstValueFrom(
-        this.httpService.get<ProductResponse>(`${this.productServiceUrl}/products/${productId}`, {
+        this.httpService.get<ProductResponse>(`${serviceUrl}/products/${productId}`, {
           headers: {
             Authorization: `Bearer ${this.adminToken}`,
           },
@@ -100,7 +118,7 @@ export class ProductService {
       const newStock = product.data.stock - quantity;
       await firstValueFrom(
         this.httpService.patch<ProductResponse>(
-          `${this.productServiceUrl}/products/${productId}`,
+          `${serviceUrl}/products/${productId}`,
           { stock: newStock },
           {
             headers: {
