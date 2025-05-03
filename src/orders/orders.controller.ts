@@ -7,6 +7,7 @@ import { Order, OrderStatus } from './entities/order.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ServiceAuthGuard } from '../auth/guards/service-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('orders')
@@ -71,11 +72,11 @@ export class OrdersController {
   }
 
   @Patch(':id/payment-status')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(ServiceAuthGuard)
   @ApiOperation({ summary: 'Update order payment status' })
   @ApiResponse({ status: 200, description: 'The order payment status has been updated.', type: Order })
   @ApiResponse({ status: 404, description: 'Order not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Invalid service token.' })
   async updatePaymentStatus(
     @Param('id') id: string,
     @Body() updatePaymentStatusDto: UpdatePaymentStatusDto,
