@@ -9,6 +9,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ServiceAuthGuard } from '../auth/guards/service-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { UserOrServiceGuard } from '../auth/guards/user-or-service.guard';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -43,11 +44,16 @@ export class OrdersController {
   }
 
   @Get(':id')
-  @UseGuards(ServiceAuthGuard)
+  @UseGuards(UserOrServiceGuard)
   @ApiOperation({ summary: 'Get order by id' })
   @ApiResponse({ status: 200, description: 'Return the order.', type: Order })
   @ApiResponse({ status: 404, description: 'Order not found.' })
-  async findOne(@Param('id') id: string): Promise<Order> {
+  async findOne(@Param('id') id: string, @Request() req): Promise<Order> {
+    // If the request is from a user, check that they own the order or are an admin
+    if (req.user && !req.user.isService) {
+      return this.ordersService.findOneForUser(id, req.user.id, req.user.role === 'admin');
+    }
+    // Service requests can access any order
     return this.ordersService.findOne(id);
   }
 

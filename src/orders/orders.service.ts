@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef, ForbiddenException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order, OrderStatus, OrderItem, PaymentStatus } from './entities/order.entity';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
@@ -90,6 +90,17 @@ export class OrdersService {
     }
     
     return order as unknown as Order;
+  }
+
+  async findOneForUser(id: string, userId: string, isAdmin: boolean): Promise<Order> {
+    const order = await this.findOne(id);
+    
+    // If user is not admin and the order doesn't belong to them, deny access
+    if (!isAdmin && order.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to access this order');
+    }
+    
+    return order;
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {

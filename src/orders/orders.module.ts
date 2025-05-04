@@ -6,6 +6,9 @@ import { OrdersController } from './orders.controller';
 import { ProductService } from './services/product.service';
 import { ServiceDiscoveryModule } from '../service-discovery/service-discovery.module';
 import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
+import { AuthModule } from '../auth/auth.module';
+import { ServiceAuthGuard } from '../auth/guards/service-auth.guard';
+import { UserOrServiceGuard } from '../auth/guards/user-or-service.guard';
 
 @Module({
   imports: [
@@ -13,9 +16,10 @@ import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
     ConfigModule,
     ServiceDiscoveryModule,
     forwardRef(() => RabbitmqModule),
+    AuthModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService, ProductService],
+  providers: [OrdersService, ProductService, ServiceAuthGuard, UserOrServiceGuard],
   exports: [OrdersService],
 })
 export class OrdersModule {} 
