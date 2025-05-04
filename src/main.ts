@@ -5,11 +5,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import * as fs from 'fs';
 import * as os from 'os';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug'], // Enable debug logging
+  });
   const logger = new Logger('Bootstrap');
   const configService = app.get(ConfigService);
   
@@ -18,6 +21,37 @@ async function bootstrap() {
   const serviceName = configService.get<string>('SERVICE_NAME') || 'order-service';
   const serviceDescription = configService.get<string>('SERVICE_DESCRIPTION') || 'Order Management Service';
   const serviceRegistryUrl = configService.get<string>('services.registry');
+  const rabbitmqUrl = configService.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672';
+
+  // Connect to RabbitMQ for order events (publishing)
+  const orderMs = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitmqUrl],
+      queue: 'orders_queue',
+      queueOptions: {
+        durable: true,
+      },
+      noAck: false,
+    },
+  });
+
+  // Connect to RabbitMQ for payment events (consuming)
+  const paymentMs = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitmqUrl],
+      queue: 'payments_queue',
+      queueOptions: {
+        durable: true,
+      },
+      noAck: false,
+    },
+  });
+
+  // Start microservices
+  await app.startAllMicroservices();
+  logger.log('Microservice is listening on queues: orders_queue, payments_queue');
 
   // Enable validation pipes
   app.useGlobalPipes(new ValidationPipe({
@@ -41,10 +75,10 @@ async function bootstrap() {
       .build();
       
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api-docs', app, document);
+    SwaggerModule.setup('/api', app, document);
     
     // Save Swagger JSON to file
-    fs.writeFileSync('./api-docs.json', JSON.stringify(document, null, 2));
+    fs.writeFileSync('./api-json.json', JSON.stringify(document, null, 2));
   }
 
   // Start the server
@@ -118,6 +152,7 @@ async function bootstrap() {
   }
   
   logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`SERVICE_TOKEN is ${configService.get<string>('SERVICE_TOKEN') ? 'configured' : 'NOT configured'}`);
 }
 
 bootstrap();

@@ -8,12 +8,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
 
   constructor(private configService: ConfigService) {
-    // First try to use the service-specific key, fall back to the shared secret
-    const secret = configService.get<string>('jwt.orderServiceKey') || 
-                   configService.get<string>('jwt.secret');
+    // Use only the shared JWT secret for compatibility with other services
+    const secret = configService.get<string>('jwt.secret');
     
     if (!secret) {
-      throw new Error('JWT secret is not configured. Please set JWT_SECRET or JWT_ORDER_SERVICE_KEY');
+      throw new Error('JWT secret is not configured. Please set JWT_SECRET');
     }
 
     super({
@@ -22,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       secretOrKey: secret,
     });
     
-    this.logger.log('JWT Strategy initialized with service-specific key');
+    this.logger.log('JWT Strategy initialized with shared secret');
   }
 
   async validate(payload: any) {

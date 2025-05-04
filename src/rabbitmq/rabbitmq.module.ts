@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RabbitmqService } from './rabbitmq.service';
+import { PaymentsConsumer } from './consumers/payments.consumer';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
@@ -22,8 +24,9 @@ import { RabbitmqService } from './rabbitmq.service';
         inject: [ConfigService],
       },
     ]),
+    forwardRef(() => OrdersModule),
   ],
-  providers: [RabbitmqService],
+  providers: [RabbitmqService, PaymentsConsumer],
   exports: [RabbitmqService],
 })
 export class RabbitmqModule {} 

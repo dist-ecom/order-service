@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { OrdersService } from './orders.service';
@@ -12,7 +12,7 @@ import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
     HttpModule,
     ConfigModule,
     ServiceDiscoveryModule,
-    RabbitmqModule,
+    forwardRef(() => RabbitmqModule),
   ],
   controllers: [OrdersController],
   providers: [OrdersService, ProductService],

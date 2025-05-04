@@ -1,9 +1,10 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ServiceAuthGuard implements CanActivate {
   private readonly serviceToken: string;
+  private readonly logger = new Logger(ServiceAuthGuard.name);
 
   constructor(private configService: ConfigService) {
     this.serviceToken = this.configService.get<string>('SERVICE_TOKEN');
@@ -11,19 +12,29 @@ export class ServiceAuthGuard implements CanActivate {
     if (!this.serviceToken) {
       throw new Error('SERVICE_TOKEN environment variable is not set');
     }
+    
+    this.logger.log(`ServiceAuthGuard initialized with token length: ${this.serviceToken.length}`);
   }
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers.authorization;
 
+    this.logger.debug(`Auth header: ${authHeader ? 'present' : 'missing'}`);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      this.logger.warn('Missing or invalid authorization header');
       throw new UnauthorizedException('Missing or invalid authorization header');
     }
 
     const token = authHeader.split(' ')[1];
+    
+    this.logger.debug(`Received token length: ${token.length}`);
+    this.logger.debug(`Expected token length: ${this.serviceToken.length}`);
+    this.logger.debug(`Tokens match: ${token === this.serviceToken}`);
 
     if (token !== this.serviceToken) {
+      this.logger.warn('Invalid service token received');
       throw new UnauthorizedException('Invalid service token');
     }
 
@@ -33,6 +44,7 @@ export class ServiceAuthGuard implements CanActivate {
       serviceName: 'payment-service',
     };
 
+    this.logger.log('Service authentication successful');
     return true;
   }
 } 

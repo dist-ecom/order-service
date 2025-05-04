@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Order, OrderStatus, OrderItem, PaymentStatus } from './entities/order.entity';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
@@ -14,6 +14,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly productService: ProductService,
+    @Inject(forwardRef(() => RabbitmqService))
     private readonly rabbitmqService: RabbitmqService,
   ) {}
 

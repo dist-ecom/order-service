@@ -18,4 +18,5 @@ export default () => ({
     adminToken: process.env.ADMIN_TOKEN,
     registry: process.env.SERVICE_REGISTRY_URL,
   },
+  SERVICE_TOKEN: process.env.SERVICE_TOKEN,
 }); 
