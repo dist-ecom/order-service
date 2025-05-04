@@ -19,6 +19,15 @@ import { OrdersModule } from '../orders/orders.module';
             queueOptions: {
               durable: true,
             },
+            serializer: {
+              serialize: (value: any) => {
+                // Convert BigInt values to strings and ensure consistent data format
+                const serialized = JSON.stringify(value, (_, v) => 
+                  typeof v === 'bigint' ? v.toString() : v
+                );
+                return serialized;
+              }
+            }
           },
         }),
         inject: [ConfigService],

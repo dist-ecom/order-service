@@ -13,11 +13,11 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nes
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new order' })
   @ApiResponse({ status: 201, description: 'The order has been successfully created.', type: Order })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
@@ -26,7 +26,7 @@ export class OrdersController {
   }
 
   @Get()
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Get all orders' })
   @ApiResponse({ status: 200, description: 'Return all orders.', type: [Order] })
@@ -35,6 +35,7 @@ export class OrdersController {
   }
 
   @Get('my-orders')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get user orders' })
   @ApiResponse({ status: 200, description: 'Return user orders.', type: [Order] })
   async findMyOrders(@Request() req): Promise<Order[]> {
@@ -42,6 +43,7 @@ export class OrdersController {
   }
 
   @Get(':id')
+  @UseGuards(ServiceAuthGuard)
   @ApiOperation({ summary: 'Get order by id' })
   @ApiResponse({ status: 200, description: 'Return the order.', type: Order })
   @ApiResponse({ status: 404, description: 'Order not found.' })
@@ -50,7 +52,7 @@ export class OrdersController {
   }
 
   @Patch(':id/status')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ 
     summary: 'Update order status',
@@ -85,6 +87,7 @@ export class OrdersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Cancel order' })
   @ApiResponse({ status: 200, description: 'The order has been cancelled.', type: Order })
   @ApiResponse({ status: 404, description: 'Order not found.' })
