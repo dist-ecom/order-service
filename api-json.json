@@ -33,7 +33,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Order"
+                  "$ref": "#/components/schemas/OrderResponse"
                 }
               }
             }
@@ -54,7 +54,17 @@
       "get": {
         "operationId": "OrdersController_findAll",
         "summary": "Get all orders",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by order status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Return all orders.",
@@ -63,11 +73,107 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Order"
+                    "$ref": "#/components/schemas/OrderResponse"
                   }
                 }
               }
             }
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/orders/draft": {
+      "post": {
+        "operationId": "OrdersController_createDraft",
+        "summary": "Create a draft order (part of checkout flow)",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraftOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Draft order created successfully"
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/orders/{id}/confirm": {
+      "post": {
+        "operationId": "OrdersController_confirmOrder",
+        "summary": "Confirm a draft order after successful payment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order confirmed successfully"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/orders/{id}/expire": {
+      "post": {
+        "operationId": "OrdersController_expireOrder",
+        "summary": "Mark a draft order as expired",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order marked as expired"
+          },
+          "404": {
+            "description": "Order not found"
           }
         },
         "tags": [
@@ -93,7 +199,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Order"
+                    "$ref": "#/components/schemas/OrderResponse"
                   }
                 }
               }
@@ -130,7 +236,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Order"
+                  "$ref": "#/components/schemas/OrderResponse"
                 }
               }
             }
@@ -167,13 +273,54 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Order"
+                  "$ref": "#/components/schemas/OrderResponse"
                 }
               }
             }
           },
           "404": {
             "description": "Order not found."
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "OrdersController_update",
+        "summary": "Update an order",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order updated successfully"
+          },
+          "404": {
+            "description": "Order not found"
           }
         },
         "tags": [
@@ -217,7 +364,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Order"
+                  "$ref": "#/components/schemas/OrderResponse"
                 }
               }
             }
@@ -269,7 +416,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Order"
+                  "$ref": "#/components/schemas/OrderResponse"
                 }
               }
             }
@@ -279,6 +426,39 @@
           },
           "404": {
             "description": "Order not found."
+          }
+        },
+        "tags": [
+          "orders"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/orders/{id}/details": {
+      "get": {
+        "operationId": "OrdersController_getOrderDetails",
+        "summary": "Get order details for service-to-service communication",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Order ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the order details"
+          },
+          "404": {
+            "description": "Order not found"
           }
         },
         "tags": [
@@ -373,159 +553,74 @@
           "paymentMethod"
         ]
       },
-      "OrderItem": {
+      "OrderResponse": {
+        "type": "object",
+        "properties": {}
+      },
+      "DraftOrderItemDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "The unique identifier of the order item",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
           "productId": {
             "type": "string",
-            "description": "The ID of the product",
+            "description": "Product ID",
             "example": "123e4567-e89b-12d3-a456-426614174000"
           },
           "quantity": {
             "type": "number",
-            "description": "The quantity of the product",
+            "description": "Quantity of the product",
             "example": 2
-          },
-          "price": {
-            "type": "number",
-            "description": "The price of the product at the time of order",
-            "example": 29.99
-          },
-          "name": {
-            "type": "string",
-            "description": "The name of the product at the time of order",
-            "example": "Premium Wireless Headphones"
-          },
-          "orderId": {
-            "type": "string",
-            "description": "The ID of the order this item belongs to",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
           }
         },
         "required": [
-          "id",
           "productId",
-          "quantity",
-          "price",
-          "name",
-          "orderId"
+          "quantity"
         ]
       },
-      "Order": {
+      "CreateDraftOrderDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "The unique identifier of the order",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
           "userId": {
             "type": "string",
-            "description": "The ID of the user who placed the order",
+            "description": "User ID",
             "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "items": {
-            "description": "The items in the order",
-            "example": [
-              {
-                "id": "123e4567-e89b-12d3-a456-426614174000",
-                "productId": "123e4567-e89b-12d3-a456-426614174000",
-                "quantity": 2,
-                "price": 29.99,
-                "name": "Premium Wireless Headphones",
-                "orderId": "123e4567-e89b-12d3-a456-426614174000"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderItem"
-            }
-          },
-          "totalAmount": {
-            "type": "number",
-            "description": "The total amount of the order",
-            "example": 59.98,
-            "minimum": 0
-          },
-          "status": {
-            "type": "string",
-            "description": "The current status of the order",
-            "enum": [
-              "pending",
-              "processing",
-              "shipped",
-              "delivered",
-              "cancelled"
-            ],
-            "example": "pending"
           },
           "shippingAddress": {
             "type": "string",
-            "description": "The shipping address for the order",
+            "description": "Shipping address",
             "example": "123 Main St, Apt 4B, New York, NY 10001"
           },
-          "trackingNumber": {
-            "type": "string",
-            "description": "The tracking number for the order",
-            "example": "1Z999AA10123456784"
+          "totalAmount": {
+            "type": "number",
+            "description": "Total amount",
+            "example": 1399.98
           },
-          "paymentMethod": {
-            "type": "string",
-            "description": "The payment method for the order",
-            "example": "credit_card",
-            "enum": [
-              "credit_card",
-              "debit_card",
-              "paypal",
-              "bank_transfer"
-            ]
+          "metadata": {
+            "type": "object",
+            "description": "Additional metadata",
+            "example": {
+              "source": "web",
+              "giftWrapping": true
+            }
           },
-          "paymentStatus": {
+          "currency": {
             "type": "string",
-            "description": "The status of the payment",
-            "enum": [
-              "pending",
-              "paid",
-              "completed",
-              "failed",
-              "refunded"
-            ],
-            "example": "pending"
+            "description": "Currency code",
+            "example": "USD",
+            "default": "USD"
           },
-          "paymentIntentId": {
-            "type": "string",
-            "description": "The Stripe payment intent ID",
-            "example": "pi_3NkXYZABCDEFGHIJKLMNOPQR"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "The date and time when the order was created",
-            "example": "2024-03-15T10:30:00Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "description": "The date and time when the order was last updated",
-            "example": "2024-03-15T10:30:00Z"
+          "items": {
+            "description": "Order items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DraftOrderItemDto"
+            }
           }
         },
         "required": [
-          "id",
           "userId",
-          "items",
           "totalAmount",
-          "status",
-          "shippingAddress",
-          "paymentMethod",
-          "paymentStatus",
-          "createdAt",
-          "updatedAt"
+          "currency",
+          "items"
         ]
       },
       "UpdateOrderStatusDto": {
@@ -535,11 +630,13 @@
             "type": "string",
             "description": "The new status of the order",
             "enum": [
+              "draft",
               "pending",
               "processing",
               "shipped",
               "delivered",
-              "cancelled"
+              "cancelled",
+              "expired"
             ],
             "example": "shipped"
           }
@@ -571,6 +668,61 @@
         },
         "required": [
           "paymentStatus"
+        ]
+      },
+      "UpdateOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "Product ID",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity of the product",
+            "example": 2
+          }
+        },
+        "required": [
+          "productId",
+          "quantity"
+        ]
+      },
+      "UpdateOrderDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Order status",
+            "example": "PENDING",
+            "enum": [
+              "draft",
+              "pending",
+              "processing",
+              "shipped",
+              "delivered",
+              "cancelled",
+              "expired"
+            ]
+          },
+          "shippingAddress": {
+            "type": "string",
+            "description": "Shipping address",
+            "example": "123 Main St, City, Country"
+          },
+          "items": {
+            "description": "Order items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdateOrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "shippingAddress",
+          "items"
         ]
       }
     }

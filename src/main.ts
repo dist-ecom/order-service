@@ -41,7 +41,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [rabbitmqUrl],
-      queue: 'payments_queue',
+      queue: 'payment_events_queue',
       queueOptions: {
         durable: true,
       },
@@ -51,7 +51,7 @@ async function bootstrap() {
 
   // Start microservices
   await app.startAllMicroservices();
-  logger.log('Microservice is listening on queues: orders_queue, payments_queue');
+  logger.log('Microservice is listening on queues: orders_queue, payment_events_queue');
 
   // Enable validation pipes
   app.useGlobalPipes(new ValidationPipe({
@@ -111,6 +111,11 @@ async function bootstrap() {
       // In Docker, use the container name as the service address
       const serviceAddress = process.env.NODE_ENV === 'production' ? hostname : ipAddress;
       
+      // Use host.docker.internal for health checks to allow Docker to reach host
+      const healthCheckAddress = 'host.docker.internal';
+      
+      logger.log(`Registering service with address=${serviceAddress}, health check at=${healthCheckAddress}`);
+      
       // Register service with Consul
       await httpService.put(`${serviceRegistryUrl}/v1/agent/service/register`, {
         ID: `${serviceName}-${hostname}`,
@@ -118,7 +123,7 @@ async function bootstrap() {
         Address: serviceAddress,
         Port: port,
         Check: {
-          HTTP: `http://${serviceAddress}:${port}/health`,
+          HTTP: `http://${healthCheckAddress}:${port}/health`,
           Interval: '15s',
           Timeout: '5s',
         },

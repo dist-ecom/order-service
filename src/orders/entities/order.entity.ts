@@ -2,11 +2,13 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum OrderStatus {
+  DRAFT = 'draft',
   PENDING = 'pending',
   PROCESSING = 'processing',
   SHIPPED = 'shipped',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
 }
 
 export enum PaymentStatus {
@@ -148,6 +150,30 @@ export class Order {
   })
   @Column({ nullable: true })
   paymentIntentId: string;
+
+  @ApiProperty({
+    description: 'The currency used for the order',
+    example: 'USD',
+    default: 'USD',
+  })
+  @Column({ default: 'USD' })
+  currency: string;
+
+  @ApiProperty({
+    description: 'Additional metadata for the order',
+    type: 'object',
+    example: { source: 'web', giftWrapping: true },
+  })
+  @Column('jsonb', { nullable: true })
+  metadata: Record<string, any>;
+
+  @ApiProperty({
+    description: 'The date and time when the draft order expires',
+    example: '2024-03-15T11:00:00Z',
+    required: false,
+  })
+  @Column({ nullable: true })
+  expiresAt: Date;
 
   @ApiProperty({
     description: 'The date and time when the order was created',

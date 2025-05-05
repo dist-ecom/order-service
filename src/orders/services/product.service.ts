@@ -46,7 +46,7 @@ export class ProductService {
     }
   }
 
-  async validateProduct(productId: string): Promise<{ price: number; name: string }> {
+  async validateProduct(productId: string): Promise<{ price: number; name: string; stock: number }> {
     try {
       const serviceUrl = await this.getProductServiceUrl();
       
@@ -64,6 +64,7 @@ export class ProductService {
       return {
         price: response.data.price,
         name: response.data.name,
+        stock: response.data.stock,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -76,7 +77,7 @@ export class ProductService {
     }
   }
 
-  async validateProducts(productIds: string[]): Promise<Map<string, { price: number; name: string }>> {
+  async validateProducts(productIds: string[]): Promise<Map<string, { price: number; name: string; stock: number }>> {
     const productMap = new Map();
     await Promise.all(
       productIds.map(async (productId) => {
@@ -135,6 +136,59 @@ export class ProductService {
         `Failed to update stock for product ${productId}: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+  
+  async reserveStock(productId: string, quantity: number): Promise<void> {
+    this.logger.log(`Reserving ${quantity} units of product ${productId}`);
+    
+    try {
+      const serviceUrl = await this.getProductServiceUrl();
+      
+      // Call the product service's stock reservation endpoint
+      await firstValueFrom(
+        this.httpService.post<ProductResponse>(
+          `${serviceUrl}/products/${productId}/reserve-stock`,
+          { quantity },
+          {
+            headers: {
+              Authorization: `Bearer ${this.adminToken}`,
+            },
+          },
+        ),
+      );
+      
+      this.logger.log(`Successfully reserved ${quantity} units of product ${productId}`);
+    } catch (error) {
+      this.logger.warn(`Failed to reserve stock for product ${productId}: ${error.message}`);
+      // We don't throw here to keep the order creation flow going
+      // In a production environment, you might want to handle this differently
+    }
+  }
+  
+  async releaseStock(productId: string, quantity: number): Promise<void> {
+    this.logger.log(`Releasing ${quantity} units of product ${productId}`);
+    
+    try {
+      const serviceUrl = await this.getProductServiceUrl();
+      
+      // Call the product service's stock release endpoint
+      await firstValueFrom(
+        this.httpService.post<ProductResponse>(
+          `${serviceUrl}/products/${productId}/release-stock`,
+          { quantity },
+          {
+            headers: {
+              Authorization: `Bearer ${this.adminToken}`,
+            },
+          },
+        ),
+      );
+      
+      this.logger.log(`Successfully released ${quantity} units of product ${productId}`);
+    } catch (error) {
+      this.logger.warn(`Failed to release stock for product ${productId}: ${error.message}`);
+      // Log but don't throw to avoid cascading failures
     }
   }
 } 
